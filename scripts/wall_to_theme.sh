@@ -37,7 +37,7 @@ fi
 
 gsettings set org.gnome.desktop.interface accent-color "$accent_color"
 
-cd ~/tool_src/Marble-shell-theme
+cd ~/sys_tools/Marble-shell-theme
 current_theme=$(gsettings get org.gnome.desktop.interface color-scheme)
 if [ $current_theme == "'prefer-dark'" ]; then
     sat=$((sat+8))
