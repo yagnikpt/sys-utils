@@ -2,7 +2,7 @@
 
 # Paths
 ICON_DIR="$HOME/.config/mako/icons"
-NOTIFY="notify-send -h string:x-canonical-private-synchronous:volume -h int:transient:1 -t 1000"
+NOTIFY="notify-send --app-name=osd -h string:x-canonical-private-synchronous:volume -h int:transient:1 -t 1000"
 
 # Get current volume and mute status
 VOL=$(pamixer --get-volume)
@@ -11,7 +11,14 @@ MUTED=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | grep -q MUTED && echo "muted" ||
 # Handle action
 case "$1" in
   up)
-    wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ --limit=1.0
+    if [ "$MUTED" = "muted" ]; then
+      wpctl set-volume @DEFAULT_AUDIO_SINK@ 0%
+      wpctl set-mute @DEFAULT_AUDIO_SINK@ 0
+      wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ --limit=1.0
+    else
+      wpctl set-mute @DEFAULT_AUDIO_SINK@ 0
+      wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ --limit=1.0
+    fi
     VOL=$(pamixer --get-volume)
     MUTED="unmuted"
     ;;
@@ -43,4 +50,4 @@ else
 fi
 
 # Send notification
-[ "$MUTED" = "muted" ] && $NOTIFY -h int:value:0 "Volume Muted" --icon="$ICON" || $NOTIFY -h int:value:"$VOL" "Volume" --icon="$ICON"
+[ "$MUTED" = "muted" ] && $NOTIFY -h int:value:0 "Muted" --icon="$ICON" || $NOTIFY -h int:value:"$VOL" "$VOL%" --icon="$ICON"

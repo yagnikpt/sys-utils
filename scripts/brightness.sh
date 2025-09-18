@@ -2,7 +2,7 @@
 
 # Paths
 ICON_DIR="$HOME/.config/mako/icons"
-NOTIFY="notify-send -h string:x-canonical-private-synchronous:brightness -h int:transient:1 -t 1000"
+NOTIFY="notify-send --app-name=osd -h string:x-canonical-private-synchronous:brightness -h int:transient:1 -t 1000"
 
 # Get current brightness percentage
 MAX=$(brightnessctl max)
@@ -35,4 +35,4 @@ else
 fi
 
 # Send notification
-$NOTIFY -h int:value:"$PERC" "Brightness" --icon="$ICON"
+$NOTIFY -h int:value:"$PERC" "$PERC" --icon="$ICON"
