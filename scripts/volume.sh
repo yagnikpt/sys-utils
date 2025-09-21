@@ -1,53 +1,33 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
-# Paths
-ICON_DIR="$HOME/.config/mako/icons"
-NOTIFY="notify-send --app-name=osd -h string:x-canonical-private-synchronous:volume -h int:transient:1 -t 1000"
+step=0.05
 
-# Get current volume and mute status
-VOL=$(pamixer --get-volume)
 MUTED=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | grep -q MUTED && echo "muted" || echo "unmuted")
 
-# Handle action
 case "$1" in
-  up)
-    if [ "$MUTED" = "muted" ]; then
-      wpctl set-volume @DEFAULT_AUDIO_SINK@ 0%
-      wpctl set-mute @DEFAULT_AUDIO_SINK@ 0
-      wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ --limit=1.0
-    else
-      wpctl set-mute @DEFAULT_AUDIO_SINK@ 0
-      wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%+ --limit=1.0
-    fi
-    VOL=$(pamixer --get-volume)
-    MUTED="unmuted"
-    ;;
-  down)
-    wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-
-    VOL=$(pamixer --get-volume)
-    MUTED=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | grep -q MUTED && echo "muted" || echo "unmuted")
-    ;;
-  mute)
-    wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle
-    MUTED=$(wpctl get-volume @DEFAULT_AUDIO_SINK@ | grep -q MUTED && echo "muted" || echo "unmuted")
-    [ "$MUTED" = "muted" ] && VOL=0
-    ;;
-  *)
-    echo "Usage: $0 {up|down|mute}"
-    exit 1
-    ;;
+    up)
+        if [ "$MUTED" = "muted" ]; then
+            wpctl set-volume @DEFAULT_AUDIO_SINK@ 0%
+        fi
+        wpctl set-mute @DEFAULT_SINK@ 0
+        wpctl set-volume @DEFAULT_SINK@ "${step}+" -l 1.0
+        ;;
+    down)
+        # wpctl set-mute @DEFAULT_SINK@ 0
+        wpctl set-volume @DEFAULT_SINK@ "${step}-"
+        ;;
+    mute)
+        wpctl set-mute @DEFAULT_SINK@ toggle
+        ;;
 esac
 
-# Pick icon based on volume
-if [ "$MUTED" = "muted" ] || [ "$VOL" -eq 0 ]; then
-  ICON="$ICON_DIR/volume-x.png"
-elif [ "$VOL" -gt 66 ]; then
-  ICON="$ICON_DIR/volume-2.png"
-elif [ "$VOL" -gt 33 ]; then
-  ICON="$ICON_DIR/volume-1.png"
-else
-  ICON="$ICON_DIR/volume.png"
+volume=$(wpctl get-volume @DEFAULT_SINK@)
+vol_value=$(echo "$volume" | awk '{print $2 * 100}')
+vol_status=$(echo "$volume" | cut -d" " -f3)
+
+if [ "$vol_status" = "[MUTED]" ]; then
+    notify-send -a "muted" -h int:value:"$vol_value" ""
+    exit 0
 fi
 
-# Send notification
-[ "$MUTED" = "muted" ] && $NOTIFY -h int:value:0 "Muted" --icon="$ICON" || $NOTIFY -h int:value:"$VOL" "$VOL%" --icon="$ICON"
+notify-send -a "osd" -h int:value:"$vol_value" ""
